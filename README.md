@@ -20,18 +20,19 @@ function save(v, cb) {
 // test pipeline
 var camelCaseSim = simtell(
   simtell.sync(toCamelCase),
-  pull.map(function(data, cb) {
-    var normalize = function(str) { return str.toLowerCase().replace(/\-\s/g, '') }
+  pull.map(function(data) {
+    // tests
+    function normalize(str) { return str.toLowerCase().replace(/\-\s/g, '') }
     assert(normalize(data.in[0]) == normalize(data.out[0]))
-    cb(null, data.out) // pass along the inputs to the next function
+    return data.out // pass along the inputs to the next function
   }),
   simtell.async(save),
-  pull.map(function(data, cb) {
+  pull.map(function(data) {
+    // tests
     var err = data.out[0], res = data.out[1]
     assert(!err)
     assert(!!res)
     assert(res.status === 200)
-    cb() // no need to pass anything along
   })
 )
 
@@ -66,16 +67,15 @@ var userSessionSim = simtell(
 
   // take 100 random actions
   simtell.loop(100, simtell.choose([
-    simtell.wait(10*000),
-    addProductToCartSim.pipe,
-    checkoutSim.pipe,
-    clearCartSim.pipe,
+    simtell.wait(10*000), // do this
+    addProductToCartSim.pipe, // or this
+    checkoutSim.pipe, // or this
+    clearCartSim.pipe, // or this
   ])),
 
   // choose a final action with a probability
   simtell.choose({
-    70: simtell.nothing(), // 70/100 times, do nothing
-    29: simtell.wait(10*1000), // 29/100 times, wait 10s
+    99: simtell.nothing(), // 99/100 times, do nothing
     1: simtell.wait(maxSessionLength + 1000) // 1/100 times, wait for the session to expire
   }),
   logoutSim.pipe
